@@ -1,40 +1,45 @@
-import warnings
 import json
-import google.generativeai as genai
 import streamlit as st
-from .config import get_api_key, get_model_candidates
-
-warnings.filterwarnings("ignore")
-
-# Configure GenAI immediately with the retrieved key
-genai.configure(api_key=get_api_key())
+from groq import Groq
+from .config import get_api_key
 
 def generate_roast_data(team_list: list[str], game_context: str = "General Pokemon") -> dict:
-    # Load models dynamically from config
-    candidates = get_model_candidates()
+    # 1. Initialize Client
+    client = Groq(api_key=get_api_key())
     
+    # 2. Define the Roast
     prompt = f"""
-    You are a competitive Pokemon veteran. The user is playing: **{game_context}**.
-    Analyze this team: {', '.join(team_list)}.
-    Goal: Roast them based on the specific meta/bosses of {game_context}.
-    Return ONLY JSON: {{ "roast": "...", "worst_pokemon": "..." }}
+    You are a toxic competitive Pokemon player. The user is playing: **{game_context}**.
+    Their team: {', '.join(team_list)}.
+    
+    ROAST THEM. Be mean, be specific about their bad type coverage, weak stats, or basic choices.
+    
+    Return ONLY JSON format:
+    {{
+        "roast": "Your roast paragraph...",
+        "worst_pokemon": "The exact name of the worst pokemon on their team"
+    }}
     """
     
-    errors = []
-    
-    for model_name in candidates:
-        try:
-            model = genai.GenerativeModel(model_name)
-            response = model.generate_content(prompt)
-            text = response.text.replace("```json", "").replace("```", "").strip()
-            return json.loads(text)
-        except Exception as e:
-            # Logs for your dashboard
-            print(f"⚠️ {model_name} Failed: {e}")
-            errors.append(f"{model_name}: {e}")
-            continue
+    try:
+        # 3. Call Llama 3 (Fast & Free)
+        completion = client.chat.completions.create(
+            model="llama3-70b-8192",  # Top tier roasting model
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that outputs JSON only."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            response_format={"type": "json_object"} # Guarantees valid JSON
+        )
+        
+        # 4. Parse Result
+        content = completion.choices[0].message.content
+        return json.loads(content)
 
-    return {
-        "roast": f"SYSTEM FAILURE. Logs: {' || '.join(errors)}",
-        "worst_pokemon": "System Error"
-    }
+    except Exception as e:
+        print(f"❌ Groq Error: {e}")
+        return {
+            "roast": f"The roast machine broke. Error: {str(e)}",
+            "worst_pokemon": "Magikarp"
+        }
