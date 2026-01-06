@@ -22,15 +22,15 @@ def generate_roast_data(team_list: list[str], game_context: str = "General Pokem
     """
     
     try:
-        # 3. Call Llama 3 (Fast & Free)
+        # 3. Call Llama 3.3 (The new flagship model)
         completion = client.chat.completions.create(
-            model="llama3-70b-8192",  # Top tier roasting model
+            model="llama-3.3-70b-versatile", 
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that outputs JSON only."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            response_format={"type": "json_object"} # Guarantees valid JSON
+            response_format={"type": "json_object"}
         )
         
         # 4. Parse Result
