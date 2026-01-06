@@ -15,7 +15,6 @@ from pokeroast.utils import (
     get_type_matchups, 
     get_counter_pokemon,
     GAME_DEX_MAP,
-    get_all_pokemon_names
 )
 
 # --- PATH SETUP ---
